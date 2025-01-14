@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+option go_package = "./";
+
+package am;
+
+import "google/protobuf/empty.proto";
+
+message CheckRequest {
+  string ns = 1;
+  string obj = 2;
+  string permission = 3;
+  string user_id = 4;
+  optional string timestamp = 5;
+}
+
+
+message Principal {
+  string id = 1;
+}
+
+message CheckResponse {
+  Principal principal = 1;
+}
+
+message ListRequest {
+  string ns = 1;
+  string permission = 3;
+  string user_id = 4;
+}
+
+message ListResponse {
+  repeated string obj = 1;
+}
+
+service CheckService {
+  rpc check (CheckRequest) returns (CheckResponse);
+  rpc list (ListRequest) returns (ListResponse);
+  rpc add (AddTuplesRequest) returns (AddTuplesResponse);
+  rpc delete (DeleteTuplesRequest) returns (DeleteTuplesResponse);
+  rpc content_change_check(ContentChangeRequest) returns (ContentChangeResponse);
+}
+
+
+message UserSet {
+  string ns = 1;
+  string obj = 2;
+  string role = 3;
+}
+
+message Tuple {
+  string ns = 1;
+  string obj = 2;
+  string role = 3;
+  oneof user {
+    string user_id = 4;
+    UserSet user_set = 5;
+  }
+  oneof condition {
+    int64 expires = 6;
+  }
+}
+
+message AddTuplesRequest {
+  repeated Tuple tuples = 1;
+}
+
+message AddTuplesResponse {
+  string timestamp = 1;
+}
+
+message DeleteTuplesRequest {
+  repeated Tuple tuples = 1;
+}
+
+message DeleteTuplesResponse {
+}
+
+
+message ContentChangeRequest {
+  string ns = 1;
+  string obj = 2;
+  string permission = 3;
+  string user_id = 4;
+}
+
+message ContentChangeResponse {
+  Principal principal = 1;
+  string timestamp = 5;
+}
