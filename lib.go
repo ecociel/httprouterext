@@ -11,7 +11,7 @@ import (
 type Namespace string
 type Obj string
 type Permission string
-type Userid string
+type UserId string
 type Principal string
 
 type Client struct {
@@ -25,7 +25,7 @@ func New(conn *grpc.ClientConn) *Client {
 	}
 }
 
-func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId Userid) (principal Principal, ok bool, err error) {
+func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error) {
 
 	res, err := c.client.Check(ctx, &proto.CheckRequest{
 		Ns:         string(ns),
