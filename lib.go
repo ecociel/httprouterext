@@ -14,8 +14,11 @@ type Permission string
 type UserId string
 type Principal string
 
+type Protected interface {
+	Requires(principalOrToken string, method string) (ns Namespace, obj Obj, permission Permission)
+}
+
 type Client struct {
-	conn   *grpc.ClientConn
 	client proto.CheckServiceClient
 }
 
@@ -44,3 +47,11 @@ func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Pe
 	}
 	return Principal(res.Principal.Id), true, nil
 }
+
+//func (a *AuthService) list(ctx context.Context, ns, permission, userId string) (*__.ListResponse, error) {
+//	return a.client.List(ctx, &__.ListRequest{
+//		Ns:         ns,
+//		Permission: permission,
+//		UserId:     userId,
+//	})
+//}
