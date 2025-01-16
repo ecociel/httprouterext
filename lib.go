@@ -47,11 +47,11 @@ func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Pe
 	}
 	return Principal(res.Principal.Id), true, nil
 }
-func (c *Client) List(ctx context.Context, ns, permission, userId string) ([]Obj, error) {
+func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error) {
 	list, err := c.grpcClient.List(ctx, &proto.ListRequest{
-		Ns:         ns,
-		Permission: permission,
-		UserId:     userId,
+		Ns:         string(ns),
+		Permission: string(permission),
+		UserId:     string(userId),
 	})
 	if err != nil {
 		return nil, err
