@@ -47,11 +47,22 @@ func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Pe
 	}
 	return Principal(res.Principal.Id), true, nil
 }
+func (c *Client) list(ctx context.Context, ns, permission, userId string) ([]Obj, error) {
+	list, err := c.grpcClient.List(ctx, &proto.ListRequest{
+		Ns:         ns,
+		Permission: permission,
+		UserId:     userId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return toObjects(list.Obj), err
+}
 
-//func (a *AuthService) list(ctx context.Context, ns, permission, userId string) (*__.ListResponse, error) {
-//	return a.grpcClient.List(ctx, &__.ListRequest{
-//		Ns:         ns,
-//		Permission: permission,
-//		UserId:     userId,
-//	})
-//}
+func toObjects(list []string) []Obj {
+	var objects []Obj
+	for _, l := range list {
+		objects = append(objects, Obj(l))
+	}
+	return objects
+}
