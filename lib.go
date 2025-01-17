@@ -2,6 +2,7 @@ package guard
 
 import (
 	"context"
+	"fmt"
 	proto "github.com/ecociel/guard-go-client/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,10 +14,6 @@ type Obj string
 type Permission string
 type UserId string
 type Principal string
-
-type Resource interface {
-	Requires(principalOrToken string, method string) (ns Namespace, obj Obj, permission Permission)
-}
 
 type Client struct {
 	grpcClient proto.CheckServiceClient
@@ -43,10 +40,11 @@ func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Pe
 			return "", false, nil
 		}
 
-		return "", false, err
+		return "", false, fmt.Errorf("check %s,%s,%s,%s: %w", ns, obj, permission, userId, err)
 	}
 	return Principal(res.Principal.Id), true, nil
 }
+
 func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error) {
 	list, err := c.grpcClient.List(ctx, &proto.ListRequest{
 		Ns:         string(ns),
@@ -54,15 +52,11 @@ func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, 
 		UserId:     string(userId),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list %s,%s,%s: %w", ns, permission, userId, err)
 	}
-	return toObjects(list.Obj), err
-}
-
-func toObjects(list []string) []Obj {
-	var objects []Obj
-	for _, l := range list {
-		objects = append(objects, Obj(l))
+	result := make([]Obj, len(list.Obj))
+	for i := range list.Obj {
+		result[i] = Obj(list.Obj[i])
 	}
-	return objects
+	return result, nil
 }
