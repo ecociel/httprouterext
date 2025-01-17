@@ -15,7 +15,7 @@ type Resource interface {
 	Requires(principalOrToken string, method string) (ns Namespace, obj Obj, permission Permission)
 }
 
-type ResponseWriterWrapper struct {
+type responseWriterWrapper struct {
 	http.ResponseWriter
 	ip                    string
 	time                  time.Time
@@ -27,16 +27,13 @@ type ResponseWriterWrapper struct {
 	headersSent           bool
 }
 
-type A interface {
-}
-
-func observe(meter Meter, w http.ResponseWriter, r *http.Request, f func(w http.ResponseWriter) error) {
+func Observe(meter Meter, w http.ResponseWriter, r *http.Request, f func(w http.ResponseWriter) error) {
 	clientIP := r.RemoteAddr
 	if colon := strings.LastIndex(clientIP, ":"); colon != -1 {
 		clientIP = clientIP[:colon]
 	}
 
-	rw := &ResponseWriterWrapper{
+	rw := &responseWriterWrapper{
 		ResponseWriter: w,
 		ip:             clientIP,
 		time:           time.Time{},
@@ -61,7 +58,7 @@ func observe(meter Meter, w http.ResponseWriter, r *http.Request, f func(w http.
 	}
 }
 
-func mapError(meter Meter, err error, w *ResponseWriterWrapper, req *http.Request) (errMsg string) {
+func mapError(meter Meter, err error, w *responseWriterWrapper, req *http.Request) (errMsg string) {
 	// If the handler returns an error, we try our best here
 	// to map it to more than just Internal Server Error
 	// First, if the error contains a hint to the caller, we
@@ -107,7 +104,6 @@ type Meter interface {
 }
 type Wrapper interface {
 	Meter
-	Version()
 	Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error)
 	//List  func(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error)
 }
@@ -124,7 +120,7 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 		}
 		token := sessionCookie.Value
 
-		observe(wrapper, rw, r, func(w http.ResponseWriter) error {
+		Observe(wrapper, rw, r, func(w http.ResponseWriter) error {
 			resource, err := extract(r, p)
 			if err != nil {
 				return fmt.Errorf("extract: %w", err)
