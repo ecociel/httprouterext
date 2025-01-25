@@ -108,6 +108,9 @@ type Wrapper interface {
 	//List  func(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error)
 }
 
+// const None = Permission("none")
+const Impossible = Permission("impossible")
+
 func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (Resource, error), hdl HandlerFunc) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
@@ -127,6 +130,7 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 			}
 			ns, obj, permission := resource.Requires(token, r.Method)
 			fmt.Printf("Access - %s,%s,%s\n", ns, obj, permission)
+
 			principal, ok, err := wrapper.Check(r.Context(), ns, obj, permission, UserId(token))
 			if err != nil {
 				return fmt.Errorf("check: %w", err)

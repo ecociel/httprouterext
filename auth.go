@@ -10,10 +10,34 @@ import (
 )
 
 type Namespace string
+
+func (s Namespace) String() string {
+	return string(s)
+}
+
 type Obj string
+
+func (s Obj) String() string {
+	return string(s)
+}
+
 type Permission string
+
+func (s Permission) String() string {
+	return string(s)
+}
+
 type UserId string
+
+func (s UserId) String() string {
+	return string(s)
+}
+
 type Principal string
+
+func (s Principal) String() string {
+	return string(s)
+}
 
 type Client struct {
 	grpcClient proto.CheckServiceClient
@@ -26,6 +50,9 @@ func New(conn *grpc.ClientConn) *Client {
 }
 
 func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error) {
+	if permission == Impossible {
+		return "", false, nil
+	}
 
 	res, err := c.grpcClient.Check(ctx, &proto.CheckRequest{
 		Ns:         string(ns),
