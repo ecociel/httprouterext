@@ -144,6 +144,7 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 				principal: principal,
 				ctx:       r.Context(),
 				check:     wrapper.Check,
+				list:      wrapper.List,
 			}
 
 			return hdl(w, r, p, resource, &user)
