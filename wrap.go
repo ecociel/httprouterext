@@ -96,9 +96,6 @@ func mapError(meter Meter, err error, w *responseWriterWrapper, req *http.Reques
 	return errMsg
 }
 
-type Subject struct {
-	Identity string
-}
 type HandlerFunc func(http.ResponseWriter, *http.Request, httprouter.Params, Resource, User) error
 
 type Meter interface {
@@ -106,7 +103,7 @@ type Meter interface {
 type Wrapper interface {
 	Meter
 	Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error)
-	List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error)
+	List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]string, error)
 }
 
 // TODO const None = Permission("none")
