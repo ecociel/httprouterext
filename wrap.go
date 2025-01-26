@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -53,7 +54,7 @@ func Observe(meter Meter, w http.ResponseWriter, r *http.Request, f func(w http.
 	if err != nil {
 		errMsg := mapError(meter, err, rw, r)
 		if errMsg != "" {
-			// log.Errorf("%s %s: error=%s identity=%s duration=%s", r.Method, r.RequestURI, errMsg, "todo user", rw.elapsedTime.String())
+			log.Printf("%s %s: error=%s identity=%s duration=%s", r.Method, r.RequestURI, errMsg, "-", rw.elapsedTime.String())
 		}
 	}
 }
@@ -98,7 +99,7 @@ func mapError(meter Meter, err error, w *responseWriterWrapper, req *http.Reques
 type Subject struct {
 	Identity string
 }
-type HandlerFunc func(http.ResponseWriter, *http.Request, httprouter.Params, Resource, Subject) error
+type HandlerFunc func(http.ResponseWriter, *http.Request, httprouter.Params, Resource, User) error
 
 type Meter interface {
 }
@@ -108,7 +109,7 @@ type Wrapper interface {
 	//List  func(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error)
 }
 
-// const None = Permission("none")
+// TODO const None = Permission("none")
 const Impossible = Permission("impossible")
 
 func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (Resource, error), hdl HandlerFunc) httprouter.Handle {
@@ -139,7 +140,16 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 				w.WriteHeader(http.StatusForbidden)
 				return nil
 			}
-			return hdl(w, r, p, resource, Subject{Identity: string(principal)})
+
+			user := user{
+				ns:        ns,
+				obj:       obj,
+				principal: principal,
+				ctx:       r.Context(),
+				check:     wrapper.Check,
+			}
+
+			return hdl(w, r, p, resource, user)
 		})
 	})
 }
