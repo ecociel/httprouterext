@@ -72,7 +72,7 @@ func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Pe
 	return Principal(res.Principal.Id), true, nil
 }
 
-func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error) {
+func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]string, error) {
 	list, err := c.grpcClient.List(ctx, &proto.ListRequest{
 		Ns:         string(ns),
 		Permission: string(permission),
@@ -81,9 +81,5 @@ func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, 
 	if err != nil {
 		return nil, fmt.Errorf("list %s,%s,%s: %w", ns, permission, userId, err)
 	}
-	result := make([]Obj, len(list.Obj))
-	for i := range list.Obj {
-		result[i] = Obj(list.Obj[i])
-	}
-	return result, nil
+	return list.Obj, nil
 }

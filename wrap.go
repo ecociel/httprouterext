@@ -106,7 +106,7 @@ type Meter interface {
 type Wrapper interface {
 	Meter
 	Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error)
-	//List  func(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error)
+	List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]Obj, error)
 }
 
 // TODO const None = Permission("none")
@@ -149,7 +149,7 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 				check:     wrapper.Check,
 			}
 
-			return hdl(w, r, p, resource, user)
+			return hdl(w, r, p, resource, &user)
 		})
 	})
 }

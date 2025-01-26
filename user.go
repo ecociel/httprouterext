@@ -2,11 +2,14 @@ package httprouterext
 
 import (
 	"context"
+	"fmt"
 	"log"
 )
 
 type User interface {
 	Principal() string
+	HasPermission(args ...string) (bool, error)
+	List(ns string, permission string) ([]string, error)
 }
 
 type user struct {
@@ -15,13 +18,14 @@ type user struct {
 	principal Principal
 	ctx       context.Context
 	check     func(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error)
+	list      func(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]string, error)
 }
 
 func (u *user) Principal() string {
 	return string(u.principal)
 }
 
-func (u *user) HasPermission(args ...string) bool {
+func (u *user) HasPermission(args ...string) (bool, error) {
 	var ns Namespace
 	var obj Obj
 	var permission Permission
@@ -47,7 +51,16 @@ func (u *user) HasPermission(args ...string) bool {
 	log.Printf("user check2: %s %s %s", ns, obj, permission)
 	_, ok, err := u.check(u.ctx, ns, obj, permission, UserId(u.principal))
 	if err != nil {
-		log.Printf("user check: %s %s %s: %v", ns, obj, permission, err)
+		return false, fmt.Errorf("user check: %s %s %s: %w", ns, obj, permission, err)
 	}
-	return ok
+	return ok, nil
+}
+
+func (u *user) List(ns string, permission string) ([]string, error) {
+	log.Printf("list: %s %s", ns, permission)
+	objs, err := u.list(u.ctx, Namespace(ns), Permission(permission), UserId(u.principal))
+	if err != nil {
+		return nil, fmt.Errorf("list: %s %s: %w", ns, permission, err)
+	}
+	return objs, nil
 }
