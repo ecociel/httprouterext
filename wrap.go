@@ -28,7 +28,7 @@ type responseWriterWrapper struct {
 	headersSent           bool
 }
 
-func Observe(meter Meter, w http.ResponseWriter, r *http.Request, f func(w http.ResponseWriter) error) {
+func Observe(w http.ResponseWriter, r *http.Request, f func(w http.ResponseWriter) error) {
 	clientIP := r.RemoteAddr
 	if colon := strings.LastIndex(clientIP, ":"); colon != -1 {
 		clientIP = clientIP[:colon]
@@ -52,50 +52,32 @@ func Observe(meter Meter, w http.ResponseWriter, r *http.Request, f func(w http.
 	rw.elapsedTime = finishTime.Sub(startTime)
 
 	if err != nil {
-		errMsg := mapError(meter, err, rw, r)
+		errMsg := mapError(err, rw, r)
 		if errMsg != "" {
 			log.Printf("%s %s: error=%s identity=%s duration=%s", r.Method, r.RequestURI, errMsg, "-", rw.elapsedTime.String())
 		}
 	}
 }
 
-func mapError(meter Meter, err error, w *responseWriterWrapper, req *http.Request) (errMsg string) {
-	// If the handler returns an error, we try our best here
-	// to map it to more than just Internal Server Error
-	// First, if the error contains a hint to the caller, we
-	// report that hint to the caller using generic 400 status code.
-	// Also, we do not log these kinds of errors since given there
+func mapError(err error, w *responseWriterWrapper, req *http.Request) (errMsg string) {
 
-	//cause := cerr.Cause(err)
-	//
-	//if errors.Is(cause, cerr.ErrNotFound) {
-	//	h.Respond404(w, cause.Error())
-	//	mx.ResponseErrors.WithLabelValues("404", obj.OperationId(req)).Add(1)
-	//	return
-	//}
-	//switch cause.(type) {
-	//case h.Problemer:
-	//	h.RespondProblem(w, cause.(h.Problemer).Problem())
-	//	mx.ResponseErrors.WithLabelValues(strconv.Itoa(cause.(h.Problemer).Problem().Status), obj.OperationId(req)).Add(1)
-	//	return
-	//case cerr.Hinter:
-	//	// Ignore potential wrapping as hinters are for conveying original
-	//	// cause + hint to the user
-	//	h.Respond400(w, fmt.Sprintf("%s: %v", cause.(cerr.Hinter).Hint(), err))
-	//	mx.ResponseErrors.WithLabelValues("400", obj.OperationId(req)).Add(1)
-	//	return
-	//default:
-	//	Respond500WithError(w, err)
-	//	mx.ResponseErrors.WithLabelValues("500", obj.OperationId(req)).Add(1)
-	//	errMsg = fmt.Sprintf("%v", err)
-	//	return errMsg
-	//}
+	var problem problemer
+	if errors.As(err, &problem) {
+		http.Error(w, fmt.Sprintf("%s: %s", problem.Error(), problem.Detail()), problem.Status())
+		return ""
+	}
 
-	http.Error(w, err.Error(), http.StatusInternalServerError)
+	http.Error(w, "", http.StatusInternalServerError)
 	errMsg = fmt.Sprintf("%v", err)
 	return errMsg
 }
 
+// HandlerFunc is a specialized handler type that provides the following features:
+//   - passes a Resource to the handler that can be used to access the extracted parameters
+//   - passes a User to the handler that can be used to access the authenticated user
+//     and perform further authorize checks
+//   - allows the handler to return an error. This error can implement the problemer interface
+//     to control how error response is constructured.
 type HandlerFunc func(http.ResponseWriter, *http.Request, httprouter.Params, Resource, User) error
 
 type Meter interface {
@@ -121,7 +103,7 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 		}
 		token := sessionCookie.Value
 
-		Observe(wrapper, rw, r, func(w http.ResponseWriter) error {
+		Observe(rw, r, func(w http.ResponseWriter) error {
 			resource, err := extract(r, p)
 			if err != nil {
 				return fmt.Errorf("extract: %w", err)
