@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	gproto "google.golang.org/protobuf/proto"
 )
 
 type Namespace string
@@ -36,6 +37,12 @@ func (s UserId) String() string {
 type Principal string
 
 func (s Principal) String() string {
+	return string(s)
+}
+
+type Timestamp string
+
+func (s Timestamp) String() string {
 	return string(s)
 }
 
@@ -82,4 +89,27 @@ func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, 
 		return nil, fmt.Errorf("list %s,%s,%s: %w", ns, permission, userId, err)
 	}
 	return list.Obj, nil
+}
+
+func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId, ts Timestamp) (principal Principal, ok bool, err error) {
+	if permission == Impossible {
+		return "", false, nil
+	}
+
+	res, err := c.grpcClient.Check(ctx, &proto.CheckRequest{
+		Ns:         string(ns),
+		Obj:        string(obj),
+		Permission: string(permission),
+		UserId:     string(userId),
+		Timestamp:  gproto.String(string(ts)),
+	})
+	if err != nil {
+		s := status.Convert(err)
+		if s.Code() == codes.NotFound {
+			return "", false, nil
+		}
+
+		return "", false, fmt.Errorf("check %s,%s,%s,%s: %w", ns, obj, permission, userId, err)
+	}
+	return Principal(res.Principal.Id), true, nil
 }
