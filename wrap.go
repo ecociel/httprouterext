@@ -85,6 +85,7 @@ type Meter interface {
 type Wrapper interface {
 	Meter
 	Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error)
+	CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId, ts Timestamp) (principal Principal, ok bool, err error)
 	List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]string, error)
 }
 
