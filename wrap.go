@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -102,6 +103,20 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 			http.Redirect(rw, r, uri, http.StatusSeeOther)
 			return
 		}
+
+		checkFunc := wrapper.Check
+
+		// If we have a check-timestamp hint, overwrite the checkfunc
+		checkTimestampCookie, err := r.Cookie("check_ts")
+		if err == nil {
+			nowUtcMillis := strconv.FormatInt(time.Now().UnixMilli(), 10)
+			checkTimestamp := validateCookieValueAndSetTimestamp(checkTimestampCookie.Value, nowUtcMillis)
+			log.Printf("Check timestamp: %s", checkTimestamp)
+			checkFunc = func(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error) {
+				return wrapper.CheckWithTimestamp(ctx, ns, obj, permission, userId, checkTimestamp)
+			}
+		}
+
 		token := sessionCookie.Value
 
 		Observe(rw, r, func(w http.ResponseWriter) error {
@@ -112,7 +127,7 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 			ns, obj, permission := resource.Requires(token, r.Method)
 			fmt.Printf("Access - %s,%s,%s\n", ns, obj, permission)
 
-			principal, ok, err := wrapper.Check(r.Context(), ns, obj, permission, UserId(token))
+			principal, ok, err := checkFunc(r.Context(), ns, obj, permission, UserId(token))
 			if err != nil {
 				return fmt.Errorf("check: %w", err)
 			}
@@ -126,11 +141,20 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 				obj:       obj,
 				principal: principal,
 				ctx:       r.Context(),
-				check:     wrapper.Check,
+				check:     checkFunc,
 				list:      wrapper.List,
 			}
 
 			return hdl(w, r, p, resource, &user)
 		})
 	})
+}
+
+func validateCookieValueAndSetTimestamp(timestampCookieVal string, nowUtcMillis string) Timestamp {
+	parts := strings.SplitN(timestampCookieVal, ":", 2)
+	if len(parts) == 2 {
+		return Timestamp(parts[1])
+	} else {
+		return Timestamp(nowUtcMillis)
+	}
 }
