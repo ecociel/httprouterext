@@ -155,8 +155,9 @@ func WrapB(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (
 
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			rw.WriteHeader(http.StatusUnauthorized)
-			rw.Write([]byte("Missing Auth Header"))
+			//rw.WriteHeader(http.StatusUnauthorized)
+			//rw.Write([]byte("Missing Auth Header"))
+			http.Error(rw, "Missing Auth Header", http.StatusUnauthorized)
 			return
 		}
 
@@ -166,8 +167,9 @@ func WrapB(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (
 
 		token, found := strings.CutPrefix(authHeader, bearerPrefix) // token = strip prefix "Bearer "
 		if !found {
-			rw.WriteHeader(http.StatusUnauthorized)
-			rw.Write([]byte("Invalid Header Format"))
+			//rw.WriteHeader(http.StatusUnauthorized)
+			//rw.Write([]byte("Invalid Header Format"))
+			http.Error(rw, "Invalid Header Format", http.StatusUnauthorized)
 			return
 		}
 
