@@ -99,11 +99,10 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 		var token string
 
 		sessionCookie, err := r.Cookie("session")
+
 		if err == nil && sessionCookie.Value != "" {
 			token = sessionCookie.Value
-		}
-
-		if errors.Is(err, http.ErrNoCookie) || (sessionCookie != nil && sessionCookie.Value == "") {
+		} else {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader != "" {
 				bearerToken, found := strings.CutPrefix(authHeader, "Bearer ")
@@ -113,10 +112,13 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 				}
 				token = strings.TrimSpace(bearerToken)
 			}
-			back := url.QueryEscape(r.RequestURI)
-			uri := fmt.Sprintf("/signin?back=%s", back)
-			http.Redirect(rw, r, uri, http.StatusSeeOther)
-			return
+
+			if token == "" {
+				back := url.QueryEscape(r.RequestURI)
+				uri := fmt.Sprintf("/signin?back=%s", back)
+				http.Redirect(rw, r, uri, http.StatusSeeOther)
+				return
+			}
 		}
 
 		checkFunc := wrapper.Check
@@ -131,8 +133,6 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 				return wrapper.CheckWithTimestamp(ctx, ns, obj, permission, userId, checkTimestamp)
 			}
 		}
-
-		token = sessionCookie.Value
 
 		Observe(rw, r, func(w http.ResponseWriter) error {
 			resource, err := extract(r, p)
