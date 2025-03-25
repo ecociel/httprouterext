@@ -111,6 +111,8 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 					return
 				}
 				token = strings.TrimSpace(bearerToken)
+			} else { // handling authHeader == ""
+				http.Error(rw, "Missing Auth Header", http.StatusUnauthorized)
 			}
 
 			if token == "" {
