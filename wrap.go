@@ -114,6 +114,7 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 			} else { // handling authHeader == ""
 				http.Error(rw, "Missing Auth Header", http.StatusUnauthorized)
 			}
+			fmt.Println("Test..")
 
 			if token == "" {
 				back := url.QueryEscape(r.RequestURI)
