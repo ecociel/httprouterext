@@ -3,7 +3,6 @@ module github.com/ecociel/httprouterext
 go 1.23.3
 
 require (
-	github.com/ecociel/guard-go-client v0.0.0-20250116133345-8f0e7bf3a4ef
 	github.com/julienschmidt/httprouter v1.3.0
 	google.golang.org/grpc v1.69.4
 	google.golang.org/protobuf v1.36.2

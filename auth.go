@@ -3,11 +3,10 @@ package httprouterext
 import (
 	"context"
 	"fmt"
-	proto "github.com/ecociel/guard-go-client/proto"
+	proto "github.com/ecociel/httprouterext/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	gproto "google.golang.org/protobuf/proto"
 )
 
 type Namespace string
@@ -56,39 +55,20 @@ func New(conn *grpc.ClientConn) *Client {
 	}
 }
 
-func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error) {
-	if permission == Impossible {
-		return "", false, nil
-	}
-
-	res, err := c.grpcClient.Check(ctx, &proto.CheckRequest{
-		Ns:         string(ns),
-		Obj:        string(obj),
-		Permission: string(permission),
-		UserId:     string(userId),
-		//Timestamp:  &timestamp,
-	})
-	if err != nil {
-		s := status.Convert(err)
-		if s.Code() == codes.NotFound {
-			return "", false, nil
-		}
-
-		return "", false, fmt.Errorf("check %s,%s,%s,%s: %w", ns, obj, permission, userId, err)
-	}
-	return Principal(res.Principal.Id), true, nil
-}
-
 func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]string, error) {
 	list, err := c.grpcClient.List(ctx, &proto.ListRequest{
-		Ns:         string(ns),
-		Permission: string(permission),
-		UserId:     string(userId),
+		Ns:     string(ns),
+		Rel:    string(permission),
+		UserId: string(userId),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("list %s,%s,%s: %w", ns, permission, userId, err)
 	}
-	return list.Obj, nil
+	return list.Objs, nil
+}
+
+func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error) {
+	return c.CheckWithTimestamp(ctx, ns, obj, permission, userId, Timestamp("1:0000000000000"))
 }
 
 func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId, ts Timestamp) (principal Principal, ok bool, err error) {
@@ -97,11 +77,11 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 	}
 
 	res, err := c.grpcClient.Check(ctx, &proto.CheckRequest{
-		Ns:         string(ns),
-		Obj:        string(obj),
-		Permission: string(permission),
-		UserId:     string(userId),
-		Timestamp:  gproto.String(string(ts)),
+		Ns:     string(ns),
+		Obj:    string(obj),
+		Rel:    string(permission),
+		UserId: string(userId),
+		Ts:     string(ts),
 	})
 	if err != nil {
 		s := status.Convert(err)
@@ -111,5 +91,17 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 
 		return "", false, fmt.Errorf("check %s,%s,%s,%s: %w", ns, obj, permission, userId, err)
 	}
-	return Principal(res.Principal.Id), true, nil
+	if !res.Ok {
+		if res.Principal != nil {
+			return Principal((*res.Principal).Id), false, nil
+		} else {
+			return "", false, nil
+		}
+	} else {
+		if res.Principal != nil {
+			return Principal((*res.Principal).Id), false, nil
+		} else {
+			return "", false, fmt.Errorf("check %s,%s,%s,%s: unexpected empty principal", ns, obj, permission, userId)
+		}
+	}
 }
