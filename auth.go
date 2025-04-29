@@ -45,6 +45,10 @@ func (s Timestamp) String() string {
 	return string(s)
 }
 
+func TimestampEpoch() Timestamp {
+	return Timestamp("1:0000000000000")
+}
+
 type Client struct {
 	grpcClient proto.CheckServiceClient
 }
@@ -99,7 +103,7 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 		}
 	} else {
 		if res.Principal != nil {
-			return Principal((*res.Principal).Id), false, nil
+			return Principal((*res.Principal).Id), true, nil
 		} else {
 			return "", false, fmt.Errorf("check %s,%s,%s,%s: unexpected empty principal", ns, obj, permission, userId)
 		}
