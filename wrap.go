@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -109,8 +108,10 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 		// If we have a check-timestamp hint, overwrite the checkfunc
 		checkTimestampCookie, err := r.Cookie("check_ts")
 		if err == nil {
-			nowUtcMillis := strconv.FormatInt(time.Now().UnixMilli(), 10)
-			checkTimestamp := validateCookieValueAndSetTimestamp(checkTimestampCookie.Value, nowUtcMillis)
+			checkTimestamp := Timestamp(checkTimestampCookie.Value)
+			if checkTimestampCookie.Value == "" {
+				checkTimestamp = TimestampEpoch()
+			}
 			log.Printf("Check timestamp: %s", checkTimestamp)
 			checkFunc = func(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error) {
 				return wrapper.CheckWithTimestamp(ctx, ns, obj, permission, userId, checkTimestamp)
@@ -150,11 +151,11 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 	})
 }
 
-func validateCookieValueAndSetTimestamp(timestampCookieVal string, nowUtcMillis string) Timestamp {
-	parts := strings.SplitN(timestampCookieVal, ":", 2)
-	if len(parts) == 2 {
-		return Timestamp(parts[1])
-	} else {
-		return Timestamp(nowUtcMillis)
-	}
-}
+//func validateCookieValueAndSetTimestamp(timestampCookieVal string, nowUtcMillis string) Timestamp {
+//	parts := strings.SplitN(timestampCookieVal, ":", 2)
+//	if len(parts) == 2 {
+//		return Timestamp(parts[1])
+//	} else {
+//		return Timestamp(nowUtcMillis)
+//	}
+//}
