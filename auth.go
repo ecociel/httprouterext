@@ -64,6 +64,7 @@ func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, 
 		Ns:     string(ns),
 		Rel:    string(permission),
 		UserId: string(userId),
+		Ts:     TimestampEpoch().String(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("list %s,%s,%s: %w", ns, permission, userId, err)
