@@ -5,8 +5,7 @@ import (
 	"fmt"
 	proto "github.com/ecociel/httprouterext/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"time"
 )
 
 type Namespace string
@@ -50,7 +49,9 @@ func TimestampEpoch() Timestamp {
 }
 
 type Client struct {
-	grpcClient proto.CheckServiceClient
+	grpcClient   proto.CheckServiceClient
+	observeCheck func(ns Namespace, obj Obj, permission Permission, userId UserId, duration time.Duration, ok bool, isError bool)
+	observeList  func(ns Namespace, permission Permission, userId UserId, duration time.Duration, isError bool)
 }
 
 func New(conn *grpc.ClientConn) *Client {
@@ -59,13 +60,27 @@ func New(conn *grpc.ClientConn) *Client {
 	}
 }
 
+func (c *Client) WithObserveCheck(f func(ns Namespace, obj Obj, permission Permission, userId UserId, duration time.Duration, ok bool, isError bool)) *Client {
+	c.observeCheck = f
+	return c
+}
+func (c *Client) WithObserveList(f func(ns Namespace, permission Permission, userId UserId, duration time.Duration, isError bool)) *Client {
+	c.observeList = f
+	return c
+}
+
 func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]string, error) {
+	begin := time.Now().UnixMilli()
 	list, err := c.grpcClient.List(ctx, &proto.ListRequest{
 		Ns:     string(ns),
 		Rel:    string(permission),
 		UserId: string(userId),
 		Ts:     TimestampEpoch().String(),
 	})
+	elapsed := time.Now().UnixMilli() - begin
+	if c.observeList != nil {
+		c.observeList(ns, permission, userId, time.Duration(elapsed)*time.Millisecond, err != nil)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("list %s,%s,%s: %w", ns, permission, userId, err)
 	}
@@ -80,6 +95,7 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 	if permission == Impossible {
 		return "", false, nil
 	}
+	begin := time.Now().UnixMilli()
 
 	res, err := c.grpcClient.Check(ctx, &proto.CheckRequest{
 		Ns:     string(ns),
@@ -88,12 +104,11 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 		UserId: string(userId),
 		Ts:     string(ts),
 	})
+	elapsed := time.Now().UnixMilli() - begin
+	if c.observeCheck != nil {
+		c.observeCheck(ns, obj, permission, userId, time.Duration(elapsed)*time.Millisecond, res.Ok, err != nil)
+	}
 	if err != nil {
-		s := status.Convert(err)
-		if s.Code() == codes.NotFound {
-			return "", false, nil
-		}
-
 		return "", false, fmt.Errorf("check %s,%s,%s,%s: %w", ns, obj, permission, userId, err)
 	}
 	if !res.Ok {
