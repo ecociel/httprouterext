@@ -169,6 +169,52 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 	})
 }
 
+func WrapB(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (Resource, error), hdl HandlerFunc) httprouter.Handle {
+	return httprouter.Handle(func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+		const bearerPrefix = "Bearer "
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, bearerPrefix) {
+			http.Error(rw, "missing or invalid auth header", http.StatusUnauthorized)
+			return
+		}
+
+		checkFunc := wrapper.Check
+
+		token := strings.TrimPrefix(authHeader, bearerPrefix)
+
+		Observe(rw, r, func(w http.ResponseWriter) error {
+			resource, err := extract(r, p)
+			if err != nil {
+				return fmt.Errorf("extract: %w", err)
+			}
+			ns, obj, permission := resource.Requires(token, r.Method)
+			fmt.Printf("Access - %s,%s,%s\n", ns, obj, permission)
+
+			principal, ok, err := checkFunc(r.Context(), ns, obj, permission, UserId(token))
+			if err != nil {
+				return fmt.Errorf("check: %w", err)
+			}
+			if !ok {
+				w.WriteHeader(http.StatusForbidden)
+				return nil
+			}
+
+			user := user{
+				ns:        ns,
+				obj:       obj,
+				principal: principal,
+				ctx:       r.Context(),
+				check:     checkFunc,
+				list:      wrapper.List,
+			}
+
+			return hdl(w, r, p, resource, &user)
+		})
+	})
+}
+
 //func validateCookieValueAndSetTimestamp(timestampCookieVal string, nowUtcMillis string) Timestamp {
 //	parts := strings.SplitN(timestampCookieVal, ":", 2)
 //	if len(parts) == 2 {
