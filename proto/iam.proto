@@ -1,90 +1,123 @@
 syntax = "proto3";
 
+//option go_package = "github.com/ecociel/httprouterext/proto";
 option go_package = "./";
-
 package am;
 
 import "google/protobuf/empty.proto";
-
-message CheckRequest {
-  string ns = 1;
-  string obj = 2;
-  string permission = 3;
-  string user_id = 4;
-  optional string timestamp = 5;
-}
-
 
 message Principal {
   string id = 1;
 }
 
+message CheckRequest {
+  string ns = 1;
+  string obj = 2;
+  string rel = 3;
+  string userId = 4;
+  string ts = 5;
+}
+
+
 message CheckResponse {
-  Principal principal = 1;
+  optional Principal principal = 1;
+  bool ok = 2;
+}
+
+message ContentChangeCheckRequest {
+  string ns = 1;
+  string obj = 2;
+  string rel = 3;
+  string userId = 4;
+}
+message ContentChangeCheckResponse {
+  bool ok = 2;
+  string ts = 3;
 }
 
 message ListRequest {
   string ns = 1;
-  string permission = 3;
-  string user_id = 4;
+  string rel = 3;
+  string userId = 4;
+  string ts = 5;
 }
 
 message ListResponse {
-  repeated string obj = 1;
+  repeated string objs = 1;
 }
 
 service CheckService {
   rpc check (CheckRequest) returns (CheckResponse);
+  rpc content_change_check (ContentChangeCheckRequest) returns (ContentChangeCheckResponse);
   rpc list (ListRequest) returns (ListResponse);
-  rpc add (AddTuplesRequest) returns (AddTuplesResponse);
-  rpc delete (DeleteTuplesRequest) returns (DeleteTuplesResponse);
-  rpc content_change_check(ContentChangeRequest) returns (ContentChangeResponse);
+  rpc read (ReadRequest) returns (ReadResponse);
+  rpc write (WriteRequest) returns (WriteResponse);
 }
 
 
 message UserSet {
   string ns = 1;
   string obj = 2;
-  string role = 3;
+  string rel = 3;
 }
 
 message Tuple {
   string ns = 1;
   string obj = 2;
-  string role = 3;
+  string rel = 3;
   oneof user {
-    string user_id = 4;
-    UserSet user_set = 5;
+    string userId = 4;
+    UserSet userSet = 5;
   }
   oneof condition {
     int64 expires = 6;
   }
 }
 
-message AddTuplesRequest {
-  repeated Tuple tuples = 1;
-}
 
-message AddTuplesResponse {
-  string timestamp = 1;
-}
+message TupleSet {
+  message TupleSpec {
+    string obj = 2;
+    string rel = 3;
+    oneof user {
+      string userId = 4;
+      UserSet userSet = 5;
+    }
+  }
+  message ObjectSpec {
+    string obj = 1;
+    optional string relation = 2;
+  }
+  message UserSetSpec {
+    string UserSet = 1;
+    optional string relation = 3;
+  }
 
-message DeleteTuplesRequest {
-  repeated Tuple tuples = 1;
-}
-
-message DeleteTuplesResponse {
-}
-
-
-message ContentChangeRequest {
   string ns = 1;
-  string obj = 2;
-  string permission = 3;
-  string user_id = 4;
+  oneof spec {
+    TupleSpec tuple_spec = 2;
+    ObjectSpec object_spec = 3;
+    UserSetSpec userset_spec = 4;
+  }
 }
 
-message ContentChangeResponse {
-  Principal principal = 1;
-  string timestamp = 5;
+message ReadRequest {
+  optional string ts = 1;
+  repeated TupleSet tuplesets = 2;
 }
+
+message ReadResponse {
+  string ts = 1;
+  repeated Tuple tuples = 2;
+}
+
+message WriteRequest {
+  optional string ts = 1;
+  repeated Tuple add_tuples = 2;
+  repeated Tuple del_tuples = 3;
+}
+
+message WriteResponse {
+  string ts = 1;
+}
+
