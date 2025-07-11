@@ -33,7 +33,7 @@ func main() {
 
 	principal, ok, err := c.CheckWithTimestamp(context.Background(), httprouterext.Namespace(ns), httprouterext.Obj(obj), httprouterext.Permission(rel), httprouterext.UserId(userId), httprouterext.Timestamp("1:0000000000000"))
 	if err != nil {
-		log.Fatalf("check: %v", err)
+		log.Fatalf("Error: %s", err.Error())
 	}
 	fmt.Printf("Result: %s %v", principal, ok)
 

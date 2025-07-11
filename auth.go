@@ -2,10 +2,15 @@ package httprouterext
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	proto "github.com/ecociel/httprouterext/proto"
 	"google.golang.org/grpc"
 	"time"
+)
+
+var (
+	ErrEmptyPrincipal = errors.New("unexpected empty principal")
 )
 
 type Namespace string
@@ -109,7 +114,7 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 		c.observeCheck(ns, obj, permission, userId, time.Duration(elapsed)*time.Millisecond, res.Ok, err != nil)
 	}
 	if err != nil {
-		return "", false, fmt.Errorf("check %s,%s,%s,%s: %w", ns, obj, permission, userId, err)
+		return "", false, err
 	}
 	if !res.Ok {
 		if res.Principal != nil {
@@ -121,7 +126,7 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 		if res.Principal != nil {
 			return Principal((*res.Principal).Id), true, nil
 		} else {
-			return "", false, fmt.Errorf("check %s,%s,%s,%s: unexpected empty principal", ns, obj, permission, userId)
+			return "", false, ErrEmptyPrincipal
 		}
 	}
 }
