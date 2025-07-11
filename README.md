@@ -1,7 +1,3 @@
-Of course. Here is a more comprehensive and developer-friendly `README.md` file for your project.
-
------
-
 # Go Client for NIO Authorization
 
 [](https://www.google.com/search?q=https://goreportcard.com/report/github.com/ecociel/httprouterext)
