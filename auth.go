@@ -147,5 +147,9 @@ func NewNaiveBasicClient(username, password string) *NaiveBasicClient {
 }
 
 func (c *NaiveBasicClient) Authenticate(_ context.Context, username, password []byte) (bool, error) {
-	return subtle.ConstantTimeCompare(username, password) == 0, nil
+	if string(username) != c.username {
+		return false, nil
+	}
+
+	return subtle.ConstantTimeCompare(password, []byte(c.password)) == 1, nil
 }
