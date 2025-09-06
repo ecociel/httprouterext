@@ -2,6 +2,7 @@ package httprouterext
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	proto "github.com/ecociel/httprouterext/proto"
@@ -129,4 +130,22 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 			return "", false, ErrEmptyPrincipal
 		}
 	}
+}
+
+// NaiveBasicClient is a basic auth authenticator that holds a single
+// username and password.
+type NaiveBasicClient struct {
+	username string
+	password string
+}
+
+func NewNaiveBasicClient(username, password string) *NaiveBasicClient {
+	return &NaiveBasicClient{
+		username: username,
+		password: password,
+	}
+}
+
+func (c *NaiveBasicClient) Authenticate(_ context.Context, username, password []byte) (bool, error) {
+	return subtle.ConstantTimeCompare(username, password) == 0, nil
 }

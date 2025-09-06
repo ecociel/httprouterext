@@ -159,3 +159,60 @@ func Wrap(wrapper Wrapper, extract func(r *http.Request, p httprouter.Params) (R
 //		return Timestamp(nowUtcMillis)
 //	}
 //}
+
+type BasicWrapper interface {
+	Authenticate(ctx context.Context, username, password []byte) (bool, error)
+}
+
+func BasicWrap(wrapper BasicWrapper, extract func(r *http.Request, p httprouter.Params) (Resource, error), hdl HandlerFunc) httprouter.Handle {
+	return httprouter.Handle(func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			rw.Header().Set("WWW-Authenticate", `Basic realm="TODO"`)
+			rw.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		Observe(rw, r, func(w http.ResponseWriter) error {
+			ok, err := wrapper.Authenticate(r.Context(), []byte(username), []byte(password))
+			if err != nil {
+				return fmt.Errorf("authenticate basic: %w", err)
+			}
+
+			if !ok {
+				rw.Header().Set("WWW-Authenticate", `Basic realm="TODO"`)
+				rw.WriteHeader(http.StatusUnauthorized)
+				return nil
+			}
+
+			resource, err := extract(r, p)
+			if err != nil {
+				return fmt.Errorf("extract: %w", err)
+			}
+			ns, obj, permission := resource.Requires(username, r.Method)
+			_ = permission
+
+			// TODO
+			//principal, ok, err := checkFunc(r.Context(), ns, obj, permission, UserId(token))
+			//if err != nil {
+			//	return fmt.Errorf("check: %w", err)
+			//}
+			//if !ok {
+			//	w.WriteHeader(http.StatusForbidden)
+			//	return nil
+			//}
+
+			user := user{
+				ns:        ns,
+				obj:       obj,
+				principal: Principal(username), // TODOprincipal,
+				ctx:       r.Context(),
+				check:     nil, //checkFunc,
+				list:      nil, //wrapper.List,
+			}
+
+			return hdl(w, r, p, resource, &user)
+		})
+	})
+}
