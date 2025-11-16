@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-//option go_package = "github.com/ecociel/httprouterext/proto";
 option go_package = "./";
 package am;
 
@@ -17,7 +16,6 @@ message CheckRequest {
   string userId = 4;
   string ts = 5;
 }
-
 
 message CheckResponse {
   optional Principal principal = 1;
@@ -77,33 +75,33 @@ message Tuple {
 
 message TupleSet {
   message TupleSpec {
-    string obj = 2;
-    string rel = 3;
+    string obj = 1;
+    string rel = 2;
     oneof user {
-      string userId = 4;
-      UserSet userSet = 5;
+      string user_id = 3;
+      UserSet user_set = 4;
     }
   }
   message ObjectSpec {
     string obj = 1;
-    optional string relation = 2;
+    optional string rel = 2;
   }
   message UserSetSpec {
-    string UserSet = 1;
-    optional string relation = 3;
+    string user_set = 1;
+    optional string rel = 2;
   }
 
   string ns = 1;
   oneof spec {
     TupleSpec tuple_spec = 2;
     ObjectSpec object_spec = 3;
-    UserSetSpec userset_spec = 4;
+    //UserSetSpec userset_spec = 5;
   }
 }
 
 message ReadRequest {
   optional string ts = 1;
-  repeated TupleSet tuplesets = 2;
+  repeated TupleSet tuple_sets = 2;
 }
 
 message ReadResponse {

@@ -5,9 +5,10 @@ import (
 	"crypto/subtle"
 	"errors"
 	"fmt"
+	"time"
+
 	proto "github.com/ecociel/httprouterext/proto"
 	"google.golang.org/grpc"
-	"time"
 )
 
 var (
@@ -36,6 +37,16 @@ type UserId string
 
 func (s UserId) String() string {
 	return string(s)
+}
+
+type UserSet struct {
+	Ns  Namespace
+	Obj Obj
+	Rel Permission
+}
+
+func (s UserSet) String() string {
+	return fmt.Sprintf("UserSet(Ns: %s, Obj: %s, Rel: %s)", s.Ns, s.Obj, s.Rel)
 }
 
 type Principal string
@@ -152,4 +163,46 @@ func (c *NaiveBasicClient) Authenticate(_ context.Context, username, password []
 	}
 
 	return subtle.ConstantTimeCompare(password, []byte(c.password)) == 1, nil
+}
+
+//Ns:     string(ns),
+//Rel:    string(permission),
+//UserId: string(userId),
+
+func (c *Client) AddOneUserId(ctx context.Context, ns Namespace, obj Obj, rel Permission, userId UserId) error {
+	addTuple := proto.Tuple{
+		Ns:   string(ns),
+		Obj:  string(obj),
+		Rel:  string(rel),
+		User: &proto.Tuple_UserId{UserId: string(userId)},
+	}
+
+	_, err := c.grpcClient.Write(ctx, &proto.WriteRequest{
+		AddTuples: []*proto.Tuple{&addTuple},
+	})
+	if err != nil {
+		return fmt.Errorf("addOneUserId %s,%s,%s,%s: %w", ns, obj, rel, userId, err)
+	}
+	return nil
+}
+
+func (c *Client) AddOneUserSet(ctx context.Context, ns Namespace, obj Obj, rel Permission, userSet UserSet) error {
+	addTuple := proto.Tuple{
+		Ns:  string(ns),
+		Obj: string(obj),
+		Rel: string(rel),
+		User: &proto.Tuple_UserSet{UserSet: &proto.UserSet{
+			Ns:  string(userSet.Ns),
+			Obj: string(userSet.Obj),
+			Rel: string(userSet.Rel),
+		}},
+	}
+
+	_, err := c.grpcClient.Write(ctx, &proto.WriteRequest{
+		AddTuples: []*proto.Tuple{&addTuple},
+	})
+	if err != nil {
+		return fmt.Errorf("addOneUserSet %s,%s,%s,%s: %w", ns, obj, rel, userSet, err)
+	}
+	return nil
 }
