@@ -9,7 +9,7 @@ with the `julienschmidt/httprouter` framework.
 See the [cmd](cmd) directory for how to use with httprouter and for how to use the client.
 
 
-# Updating GRPC Code
+# Updating gRPC Code
 
 Run
 
