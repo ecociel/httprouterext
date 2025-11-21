@@ -185,6 +185,26 @@ go generate ./...
 
 -----
 
+## Tsting
+
+admin@local.local|226ab259-cf37-4cf9-877f-71ee0a795243
+anna@local.local|a63c2dff-6cdb-4625-b3c7-250bfdc44bb8
+bob@local.local|7fcc7383-2999-491a-ae7d-68d3497936f4
+
+9  go run cmd/list.go project project.get bbf15352-f4d8-4c83-8043-b1449ed77ae2
+  540  go run cmd/write.go project p44 owner 89433e8d-adbf-45e8-a6b6-1b59cfe96831
+  541  go run cmd/list.go project project.get 89433e8d-adbf-45e8-a6b6-1b59cfe96831
+  542  go run cmd/write.go project p43 owner 89433e8d-adbf-45e8-a6b6-1b59cfe96831
+  543  go run cmd/write.go project p49 owner 89433e8d-adbf-45e8-a6b6-1b59cfe96831
+  544  go run cmd/list.go project project.get 89433e8d-adbf-45e8-a6b6-1b59cfe96831
+  545  go run cmd/write.go serviceaccount deploy parent 'root:root#...'
+  546  go run cmd/write.go serviceaccount deploy parent 'root:root#...'
+  547  sqlite3 test/check.sqlite 'select * from tuples_root,
+  548  sqlite3 test/check.sqlite 'select * from tuples_root'
+  549  sqlite3 test/check.sqlite 'select * from tuples_serviceaccount'
+  550  go run cmd/list.go serviceaccount serviceaccount.get bbf15352-f4d8-4c83-8043-b1449ed77ae2
+
+
 ## License
 
 This project is licensed under the **Apache 2.0 License**. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.

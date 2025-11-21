@@ -12,80 +12,118 @@ import (
 )
 
 var (
+	// ErrEmptyPrincipal is returned when a check is successful but the principal is empty.
 	ErrEmptyPrincipal = errors.New("unexpected empty principal")
 )
 
+// Namespace is a collection of objects.
 type Namespace string
 
+// String returns the string representation of the namespace.
 func (s Namespace) String() string {
 	return string(s)
 }
 
+// NsRoot is the root namespace.
+const NsRoot = Namespace("root")
+
+// Obj is an object.
 type Obj string
 
+// String returns the string representation of the object.
 func (s Obj) String() string {
+
 	return string(s)
 }
 
+// ObjRoot is the root object.
+const ObjRoot = Obj("root")
+
+// Permission is a permission on an object.
 type Permission string
 
+// String returns the string representation of the permission.
 func (s Permission) String() string {
 	return string(s)
 }
 
+// RelUnspecified is the unspecified permission.
+const RelUnspecified = Permission("...")
+const RelParent = Permission("parent")
+
+// UserId is a user's ID.
 type UserId string
 
+// String returns the string representation of the user ID.
 func (s UserId) String() string {
 	return string(s)
 }
 
+// UserSet is a set of users.
 type UserSet struct {
 	Ns  Namespace
 	Obj Obj
 	Rel Permission
 }
 
+// String returns the string representation of the user set.
 func (s UserSet) String() string {
 	return fmt.Sprintf("UserSet(Ns: %s, Obj: %s, Rel: %s)", s.Ns, s.Obj, s.Rel)
 }
 
+// Principal is a user or a group of users.
 type Principal string
 
+// String returns the string representation of the principal.
 func (s Principal) String() string {
 	return string(s)
 }
 
+// Timestamp is a timestamp.
 type Timestamp string
 
+// String returns the string representation of the timestamp.
 func (s Timestamp) String() string {
 	return string(s)
 }
 
+// TimestampEpoch returns the epoch timestamp.
 func TimestampEpoch() Timestamp {
 	return Timestamp("1:0000000000000")
 }
 
+// Client is a client for the check service.
 type Client struct {
 	grpcClient   proto.CheckServiceClient
 	observeCheck func(ns Namespace, obj Obj, permission Permission, userId UserId, duration time.Duration, ok bool, isError bool)
 	observeList  func(ns Namespace, permission Permission, userId UserId, duration time.Duration, isError bool)
 }
 
+// New creates a new client.
 func New(conn *grpc.ClientConn) *Client {
 	return &Client{
 		grpcClient: proto.NewCheckServiceClient(conn),
 	}
 }
 
+// WithObserveCheck sets the observe function for checks.
+// The observe function is called after each check.
+// It can be used to collect metrics about the checks.
 func (c *Client) WithObserveCheck(f func(ns Namespace, obj Obj, permission Permission, userId UserId, duration time.Duration, ok bool, isError bool)) *Client {
 	c.observeCheck = f
 	return c
 }
+
+// WithObserveList sets the observe function for lists.
+// The observe function is called after each list.
+// It can be used to collect metrics about the lists.
 func (c *Client) WithObserveList(f func(ns Namespace, permission Permission, userId UserId, duration time.Duration, isError bool)) *Client {
 	c.observeList = f
 	return c
 }
 
+// List lists the objects a user has permission to.
+// It returns a list of object IDs.
 func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, userId UserId) ([]string, error) {
 	begin := time.Now().UnixMilli()
 	list, err := c.grpcClient.List(ctx, &proto.ListRequest{
@@ -104,10 +142,14 @@ func (c *Client) List(ctx context.Context, ns Namespace, permission Permission, 
 	return list.Objs, nil
 }
 
+// Check checks if a user has a permission on an object.
+// It returns the principal that granted the permission, whether the check was successful, and an error.
 func (c *Client) Check(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId) (principal Principal, ok bool, err error) {
 	return c.CheckWithTimestamp(ctx, ns, obj, permission, userId, Timestamp("1:0000000000000"))
 }
 
+// CheckWithTimestamp checks if a user has a permission on an object at a specific timestamp.
+// It returns the principal that granted the permission, whether the check was successful, and an error.
 func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, permission Permission, userId UserId, ts Timestamp) (principal Principal, ok bool, err error) {
 	if permission == Impossible {
 		return "", false, nil
@@ -123,7 +165,11 @@ func (c *Client) CheckWithTimestamp(ctx context.Context, ns Namespace, obj Obj, 
 	})
 	elapsed := time.Now().UnixMilli() - begin
 	if c.observeCheck != nil {
-		c.observeCheck(ns, obj, permission, userId, time.Duration(elapsed)*time.Millisecond, res.Ok, err != nil)
+		isOk := false
+		if res != nil {
+			isOk = res.Ok
+		}
+		c.observeCheck(ns, obj, permission, userId, time.Duration(elapsed)*time.Millisecond, isOk, err != nil)
 	}
 	if err != nil {
 		return "", false, err
@@ -150,6 +196,7 @@ type NaiveBasicClient struct {
 	password string
 }
 
+// NewNaiveBasicClient creates a new naive basic client.
 func NewNaiveBasicClient(username, password string) *NaiveBasicClient {
 	return &NaiveBasicClient{
 		username: username,
@@ -157,6 +204,8 @@ func NewNaiveBasicClient(username, password string) *NaiveBasicClient {
 	}
 }
 
+// Authenticate authenticates a user with a username and password.
+// It returns whether the authentication was successful and an error.
 func (c *NaiveBasicClient) Authenticate(_ context.Context, username, password []byte) (bool, error) {
 	if string(username) != c.username {
 		return false, nil
@@ -169,6 +218,7 @@ func (c *NaiveBasicClient) Authenticate(_ context.Context, username, password []
 //Rel:    string(permission),
 //UserId: string(userId),
 
+// AddOneUserId adds a user to an object with a specific relation.
 func (c *Client) AddOneUserId(ctx context.Context, ns Namespace, obj Obj, rel Permission, userId UserId) error {
 	addTuple := proto.Tuple{
 		Ns:   string(ns),
@@ -184,6 +234,16 @@ func (c *Client) AddOneUserId(ctx context.Context, ns Namespace, obj Obj, rel Pe
 		return fmt.Errorf("addOneUserId %s,%s,%s,%s: %w", ns, obj, rel, userId, err)
 	}
 	return nil
+}
+
+// AddParent adds an inheritance relationship using the quasi-stanard relation "parent.
+func (c *Client) AddParent(ctx context.Context, ns Namespace, obj Obj, parentNs Namespace, parentObj Obj) error {
+	userSet := UserSet{
+		Ns:  parentNs,
+		Obj: parentObj,
+		Rel: RelUnspecified,
+	}
+	return c.AddOneUserSet(ctx, ns, obj, RelParent, userSet)
 }
 
 func (c *Client) AddOneUserSet(ctx context.Context, ns Namespace, obj Obj, rel Permission, userSet UserSet) error {
