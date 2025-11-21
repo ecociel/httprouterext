@@ -6,7 +6,7 @@ with the `julienschmidt/httprouter` framework.
 
 # Usage
 
-See the [examples](examples) directory for how to use with httprouter and for how to use the client.
+See the [cmd](cmd) directory for how to use with httprouter and for how to use the client.
 
 
 # Updating GRPC Code
