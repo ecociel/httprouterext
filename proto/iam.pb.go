@@ -629,7 +629,6 @@ type TupleSet struct {
 	//
 	//	*TupleSet_TupleSpec_
 	//	*TupleSet_ObjectSpec_
-	//	*TupleSet_UsersetSpec
 	Spec          isTupleSet_Spec `protobuf_oneof:"spec"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -697,15 +696,6 @@ func (x *TupleSet) GetObjectSpec() *TupleSet_ObjectSpec {
 	return nil
 }
 
-func (x *TupleSet) GetUsersetSpec() *TupleSet_UserSetSpec {
-	if x != nil {
-		if x, ok := x.Spec.(*TupleSet_UsersetSpec); ok {
-			return x.UsersetSpec
-		}
-	}
-	return nil
-}
-
 type isTupleSet_Spec interface {
 	isTupleSet_Spec()
 }
@@ -715,23 +705,17 @@ type TupleSet_TupleSpec_ struct {
 }
 
 type TupleSet_ObjectSpec_ struct {
-	ObjectSpec *TupleSet_ObjectSpec `protobuf:"bytes,3,opt,name=object_spec,json=objectSpec,proto3,oneof"`
-}
-
-type TupleSet_UsersetSpec struct {
-	UsersetSpec *TupleSet_UserSetSpec `protobuf:"bytes,4,opt,name=userset_spec,json=usersetSpec,proto3,oneof"`
+	ObjectSpec *TupleSet_ObjectSpec `protobuf:"bytes,3,opt,name=object_spec,json=objectSpec,proto3,oneof"` //UserSetSpec userset_spec = 5;
 }
 
 func (*TupleSet_TupleSpec_) isTupleSet_Spec() {}
 
 func (*TupleSet_ObjectSpec_) isTupleSet_Spec() {}
 
-func (*TupleSet_UsersetSpec) isTupleSet_Spec() {}
-
 type ReadRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Ts            *string                `protobuf:"bytes,1,opt,name=ts,proto3,oneof" json:"ts,omitempty"`
-	Tuplesets     []*TupleSet            `protobuf:"bytes,2,rep,name=tuplesets,proto3" json:"tuplesets,omitempty"`
+	TupleSets     []*TupleSet            `protobuf:"bytes,2,rep,name=tuple_sets,json=tupleSets,proto3" json:"tuple_sets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -773,9 +757,9 @@ func (x *ReadRequest) GetTs() string {
 	return ""
 }
 
-func (x *ReadRequest) GetTuplesets() []*TupleSet {
+func (x *ReadRequest) GetTupleSets() []*TupleSet {
 	if x != nil {
-		return x.Tuplesets
+		return x.TupleSets
 	}
 	return nil
 }
@@ -938,8 +922,8 @@ func (x *WriteResponse) GetTs() string {
 
 type TupleSet_TupleSpec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Obj   string                 `protobuf:"bytes,2,opt,name=obj,proto3" json:"obj,omitempty"`
-	Rel   string                 `protobuf:"bytes,3,opt,name=rel,proto3" json:"rel,omitempty"`
+	Obj   string                 `protobuf:"bytes,1,opt,name=obj,proto3" json:"obj,omitempty"`
+	Rel   string                 `protobuf:"bytes,2,opt,name=rel,proto3" json:"rel,omitempty"`
 	// Types that are valid to be assigned to User:
 	//
 	//	*TupleSet_TupleSpec_UserId
@@ -1023,11 +1007,11 @@ type isTupleSet_TupleSpec_User interface {
 }
 
 type TupleSet_TupleSpec_UserId struct {
-	UserId string `protobuf:"bytes,4,opt,name=userId,proto3,oneof"`
+	UserId string `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3,oneof"`
 }
 
 type TupleSet_TupleSpec_UserSet struct {
-	UserSet *UserSet `protobuf:"bytes,5,opt,name=userSet,proto3,oneof"`
+	UserSet *UserSet `protobuf:"bytes,4,opt,name=user_set,json=userSet,proto3,oneof"`
 }
 
 func (*TupleSet_TupleSpec_UserId) isTupleSet_TupleSpec_User() {}
@@ -1037,7 +1021,7 @@ func (*TupleSet_TupleSpec_UserSet) isTupleSet_TupleSpec_User() {}
 type TupleSet_ObjectSpec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Obj           string                 `protobuf:"bytes,1,opt,name=obj,proto3" json:"obj,omitempty"`
-	Relation      *string                `protobuf:"bytes,2,opt,name=relation,proto3,oneof" json:"relation,omitempty"`
+	Rel           *string                `protobuf:"bytes,2,opt,name=rel,proto3,oneof" json:"rel,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1079,17 +1063,17 @@ func (x *TupleSet_ObjectSpec) GetObj() string {
 	return ""
 }
 
-func (x *TupleSet_ObjectSpec) GetRelation() string {
-	if x != nil && x.Relation != nil {
-		return *x.Relation
+func (x *TupleSet_ObjectSpec) GetRel() string {
+	if x != nil && x.Rel != nil {
+		return *x.Rel
 	}
 	return ""
 }
 
 type TupleSet_UserSetSpec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserSet       string                 `protobuf:"bytes,1,opt,name=UserSet,proto3" json:"UserSet,omitempty"`
-	Relation      *string                `protobuf:"bytes,3,opt,name=relation,proto3,oneof" json:"relation,omitempty"`
+	UserSet       string                 `protobuf:"bytes,1,opt,name=user_set,json=userSet,proto3" json:"user_set,omitempty"`
+	Rel           *string                `protobuf:"bytes,2,opt,name=rel,proto3,oneof" json:"rel,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1131,9 +1115,9 @@ func (x *TupleSet_UserSetSpec) GetUserSet() string {
 	return ""
 }
 
-func (x *TupleSet_UserSetSpec) GetRelation() string {
-	if x != nil && x.Relation != nil {
-		return *x.Relation
+func (x *TupleSet_UserSetSpec) GetRel() string {
+	if x != nil && x.Rel != nil {
+		return *x.Rel
 	}
 	return ""
 }
@@ -1183,33 +1167,33 @@ const file_iam_proto_rawDesc = "" +
 	"\auserSet\x18\x05 \x01(\v2\v.am.UserSetH\x00R\auserSet\x12\x1a\n" +
 	"\aexpires\x18\x06 \x01(\x03H\x01R\aexpiresB\x06\n" +
 	"\x04userB\v\n" +
-	"\tcondition\"\xf7\x03\n" +
+	"\tcondition\"\x9d\x03\n" +
 	"\bTupleSet\x12\x0e\n" +
 	"\x02ns\x18\x01 \x01(\tR\x02ns\x127\n" +
 	"\n" +
 	"tuple_spec\x18\x02 \x01(\v2\x16.am.TupleSet.TupleSpecH\x00R\ttupleSpec\x12:\n" +
 	"\vobject_spec\x18\x03 \x01(\v2\x17.am.TupleSet.ObjectSpecH\x00R\n" +
-	"objectSpec\x12=\n" +
-	"\fuserset_spec\x18\x04 \x01(\v2\x18.am.TupleSet.UserSetSpecH\x00R\vusersetSpec\x1az\n" +
+	"objectSpec\x1a|\n" +
 	"\tTupleSpec\x12\x10\n" +
-	"\x03obj\x18\x02 \x01(\tR\x03obj\x12\x10\n" +
-	"\x03rel\x18\x03 \x01(\tR\x03rel\x12\x18\n" +
-	"\x06userId\x18\x04 \x01(\tH\x00R\x06userId\x12'\n" +
-	"\auserSet\x18\x05 \x01(\v2\v.am.UserSetH\x00R\auserSetB\x06\n" +
-	"\x04user\x1aL\n" +
+	"\x03obj\x18\x01 \x01(\tR\x03obj\x12\x10\n" +
+	"\x03rel\x18\x02 \x01(\tR\x03rel\x12\x19\n" +
+	"\auser_id\x18\x03 \x01(\tH\x00R\x06userId\x12(\n" +
+	"\buser_set\x18\x04 \x01(\v2\v.am.UserSetH\x00R\auserSetB\x06\n" +
+	"\x04user\x1a=\n" +
 	"\n" +
 	"ObjectSpec\x12\x10\n" +
-	"\x03obj\x18\x01 \x01(\tR\x03obj\x12\x1f\n" +
-	"\brelation\x18\x02 \x01(\tH\x00R\brelation\x88\x01\x01B\v\n" +
-	"\t_relation\x1aU\n" +
-	"\vUserSetSpec\x12\x18\n" +
-	"\aUserSet\x18\x01 \x01(\tR\aUserSet\x12\x1f\n" +
-	"\brelation\x18\x03 \x01(\tH\x00R\brelation\x88\x01\x01B\v\n" +
-	"\t_relationB\x06\n" +
-	"\x04spec\"U\n" +
+	"\x03obj\x18\x01 \x01(\tR\x03obj\x12\x15\n" +
+	"\x03rel\x18\x02 \x01(\tH\x00R\x03rel\x88\x01\x01B\x06\n" +
+	"\x04_rel\x1aG\n" +
+	"\vUserSetSpec\x12\x19\n" +
+	"\buser_set\x18\x01 \x01(\tR\auserSet\x12\x15\n" +
+	"\x03rel\x18\x02 \x01(\tH\x00R\x03rel\x88\x01\x01B\x06\n" +
+	"\x04_relB\x06\n" +
+	"\x04spec\"V\n" +
 	"\vReadRequest\x12\x13\n" +
-	"\x02ts\x18\x01 \x01(\tH\x00R\x02ts\x88\x01\x01\x12*\n" +
-	"\ttuplesets\x18\x02 \x03(\v2\f.am.TupleSetR\ttuplesetsB\x05\n" +
+	"\x02ts\x18\x01 \x01(\tH\x00R\x02ts\x88\x01\x01\x12+\n" +
+	"\n" +
+	"tuple_sets\x18\x02 \x03(\v2\f.am.TupleSetR\ttupleSetsB\x05\n" +
 	"\x03_ts\"A\n" +
 	"\fReadResponse\x12\x0e\n" +
 	"\x02ts\x18\x01 \x01(\tR\x02ts\x12!\n" +
@@ -1267,27 +1251,26 @@ var file_iam_proto_depIdxs = []int32{
 	7,  // 1: am.Tuple.userSet:type_name -> am.UserSet
 	14, // 2: am.TupleSet.tuple_spec:type_name -> am.TupleSet.TupleSpec
 	15, // 3: am.TupleSet.object_spec:type_name -> am.TupleSet.ObjectSpec
-	16, // 4: am.TupleSet.userset_spec:type_name -> am.TupleSet.UserSetSpec
-	9,  // 5: am.ReadRequest.tuplesets:type_name -> am.TupleSet
-	8,  // 6: am.ReadResponse.tuples:type_name -> am.Tuple
-	8,  // 7: am.WriteRequest.add_tuples:type_name -> am.Tuple
-	8,  // 8: am.WriteRequest.del_tuples:type_name -> am.Tuple
-	7,  // 9: am.TupleSet.TupleSpec.userSet:type_name -> am.UserSet
-	1,  // 10: am.CheckService.check:input_type -> am.CheckRequest
-	3,  // 11: am.CheckService.content_change_check:input_type -> am.ContentChangeCheckRequest
-	5,  // 12: am.CheckService.list:input_type -> am.ListRequest
-	10, // 13: am.CheckService.read:input_type -> am.ReadRequest
-	12, // 14: am.CheckService.write:input_type -> am.WriteRequest
-	2,  // 15: am.CheckService.check:output_type -> am.CheckResponse
-	4,  // 16: am.CheckService.content_change_check:output_type -> am.ContentChangeCheckResponse
-	6,  // 17: am.CheckService.list:output_type -> am.ListResponse
-	11, // 18: am.CheckService.read:output_type -> am.ReadResponse
-	13, // 19: am.CheckService.write:output_type -> am.WriteResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	9,  // 4: am.ReadRequest.tuple_sets:type_name -> am.TupleSet
+	8,  // 5: am.ReadResponse.tuples:type_name -> am.Tuple
+	8,  // 6: am.WriteRequest.add_tuples:type_name -> am.Tuple
+	8,  // 7: am.WriteRequest.del_tuples:type_name -> am.Tuple
+	7,  // 8: am.TupleSet.TupleSpec.user_set:type_name -> am.UserSet
+	1,  // 9: am.CheckService.check:input_type -> am.CheckRequest
+	3,  // 10: am.CheckService.content_change_check:input_type -> am.ContentChangeCheckRequest
+	5,  // 11: am.CheckService.list:input_type -> am.ListRequest
+	10, // 12: am.CheckService.read:input_type -> am.ReadRequest
+	12, // 13: am.CheckService.write:input_type -> am.WriteRequest
+	2,  // 14: am.CheckService.check:output_type -> am.CheckResponse
+	4,  // 15: am.CheckService.content_change_check:output_type -> am.ContentChangeCheckResponse
+	6,  // 16: am.CheckService.list:output_type -> am.ListResponse
+	11, // 17: am.CheckService.read:output_type -> am.ReadResponse
+	13, // 18: am.CheckService.write:output_type -> am.WriteResponse
+	14, // [14:19] is the sub-list for method output_type
+	9,  // [9:14] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_iam_proto_init() }
@@ -1304,7 +1287,6 @@ func file_iam_proto_init() {
 	file_iam_proto_msgTypes[9].OneofWrappers = []any{
 		(*TupleSet_TupleSpec_)(nil),
 		(*TupleSet_ObjectSpec_)(nil),
-		(*TupleSet_UsersetSpec)(nil),
 	}
 	file_iam_proto_msgTypes[10].OneofWrappers = []any{}
 	file_iam_proto_msgTypes[12].OneofWrappers = []any{}
